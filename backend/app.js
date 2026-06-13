@@ -16,7 +16,9 @@ app.use('/api/dsa', dsaRouter);
 
 // Serve static files from the frontend folder
 // The frontend folder will be one directory above the backend
-app.use(express.static(path.join(__dirname, '../frontend')));
+const frontendPath = path.join(__dirname, '../frontend');
+console.log(`[Static] Serving frontend from: ${frontendPath}`);
+app.use(express.static(frontendPath));
 
 // Catch-all route to serve the Single Page App for front-end routing
 app.use((req, res, next) => {
@@ -24,7 +26,13 @@ app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
         return next();
     }
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+    const indexPath = path.join(__dirname, '../frontend/index.html');
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error(`[Error] Failed to send index.html from ${indexPath}:`, err.message);
+            res.status(404).send('Frontend index.html missing. Please check your deployment root directory.');
+        }
+    });
 });
 
 module.exports = app;
