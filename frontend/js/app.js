@@ -940,6 +940,75 @@ if (heatmapPrevBtn && heatmapNextBtn) {
     });
 }
 
+// Gemini Prompt Builder Logic
+function updateGeneratedPrompt() {
+    const role = document.getElementById('prompt-role').value.trim() || 'SDE Intern';
+    const topic = document.getElementById('prompt-topic').value.trim() || 'DP';
+    const days = document.getElementById('prompt-days').value.trim() || '10';
+    const level = document.getElementById('prompt-level').value;
+    const playlist = document.getElementById('prompt-link').value.trim();
+    
+    let playlistSentence = '';
+    if (playlist) {
+        playlistSentence = `I am following this YouTube playlist/reference for my study: ${playlist}. Please align the plan with this resource.`;
+    }
+    
+    const promptText = `I am preparing for a ${role} role. I have ${days} days to study. Please create a day-by-day DSA study plan for the topic: "${topic}".
+Focus on ${level} difficulty questions.
+${playlistSentence}
+
+You MUST format the output exactly as shown below so my parser can read it. Do not include markdown tables, only print the raw lines:
+
+Day 1: Two Sum - Easy (LeetCode)
+Day 2: Valid Anagram - Easy (LeetCode)
+Day 3: Group Anagrams - Medium (LeetCode)
+
+Ensure each line contains the Day number, Question name, Difficulty, and Platform (LeetCode, GeeksforGeeks, Codeforces, etc.) in this exact format.`;
+
+    const textarea = document.getElementById('prompt-output-textarea');
+    if (textarea) {
+        textarea.value = promptText;
+    }
+}
+
+// Bind input event listeners to prompt elements
+const promptRoleInput = document.getElementById('prompt-role');
+const promptTopicInput = document.getElementById('prompt-topic');
+const promptDaysInput = document.getElementById('prompt-days');
+const promptLevelSelect = document.getElementById('prompt-level');
+const promptLinkInput = document.getElementById('prompt-link');
+const copyPromptBtn = document.getElementById('copy-prompt-btn');
+
+if (promptRoleInput) {
+    [promptRoleInput, promptTopicInput, promptDaysInput, promptLevelSelect, promptLinkInput].forEach(el => {
+        if (el) {
+            el.addEventListener('input', updateGeneratedPrompt);
+            el.addEventListener('change', updateGeneratedPrompt);
+        }
+    });
+    updateGeneratedPrompt();
+}
+
+if (copyPromptBtn) {
+    copyPromptBtn.addEventListener('click', () => {
+        const textarea = document.getElementById('prompt-output-textarea');
+        if (textarea) {
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // Mobile
+            
+            try {
+                navigator.clipboard.writeText(textarea.value);
+                copyPromptBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                setTimeout(() => {
+                    copyPromptBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy Prompt';
+                }, 2000);
+            } catch (err) {
+                alert('Failed to copy. Please select and copy manually.');
+            }
+        }
+    });
+}
+
 // App Initiation
 window.addEventListener('DOMContentLoaded', () => {
     if (state.token && state.user) {

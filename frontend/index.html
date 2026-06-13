@@ -315,6 +315,52 @@
                     <div class="drawer-body">
                         <p class="drawer-desc">Paste your generated syllabus or day-by-day plan from Gemini here. Our parser automatically structures questions by day indices.</p>
                         
+                        <!-- PROMPT BUILDER HELPER -->
+                        <div class="prompt-builder-card" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; border-left: 3px solid var(--primary-light);">
+                            <h3 style="font-family: var(--font-outfit); font-size: 14px; margin-bottom: 8px; color: var(--primary-light); display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Gemini Prompt Builder
+                            </h3>
+                            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">Customize details to generate an optimized prompt for Gemini to structure your study plan.</p>
+                            
+                            <div class="prompt-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div class="import-form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 10px; font-weight: 600;">Target Role / Job</label>
+                                    <input type="text" id="prompt-role" class="glass-input" placeholder="e.g. SDE Intern" style="padding: 8px; font-size: 11px;" value="SDE Intern">
+                                </div>
+                                <div class="import-form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 10px; font-weight: 600;">Topic Name</label>
+                                    <input type="text" id="prompt-topic" class="glass-input" placeholder="e.g. DP" style="padding: 8px; font-size: 11px;" value="DP">
+                                </div>
+                            </div>
+                            <div class="prompt-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div class="import-form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 10px; font-weight: 600;">Number of Days</label>
+                                    <input type="number" id="prompt-days" class="glass-input" placeholder="e.g. 10" style="padding: 8px; font-size: 11px;" value="10">
+                                </div>
+                                <div class="import-form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 10px; font-weight: 600;">Difficulty Level</label>
+                                    <select id="prompt-level" class="glass-input" style="padding: 8px; font-size: 11px; background: #0e0e10; border: 1px solid rgba(255,255,255,0.08); color: white; height: 35px;">
+                                        <option value="all levels">All Levels</option>
+                                        <option value="basic">Basic</option>
+                                        <option value="easy">Easy</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="difficult">Difficult</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="import-form-group" style="margin-bottom: 10px;">
+                                <label style="font-size: 10px; font-weight: 600;">YouTube Playlist / Reference (Optional)</label>
+                                <input type="text" id="prompt-link" class="glass-input" placeholder="https://youtube.com/..." style="padding: 8px; font-size: 11px;">
+                            </div>
+                            
+                            <div class="import-form-group" style="margin-bottom: 8px;">
+                                <label style="font-size: 10px; font-weight: 600;">Generated Prompt</label>
+                                <textarea id="prompt-output-textarea" readonly class="glass-input" rows="4" style="padding: 8px; font-size: 10px; font-family: monospace; background: rgba(0,0,0,0.5); resize: none; color: #a5c1dc;"></textarea>
+                            </div>
+                            
+                            <button id="copy-prompt-btn" class="btn btn-secondary btn-block btn-sm" style="font-size: 11px; font-weight: 600; padding: 8px;"><i class="fa-regular fa-copy"></i> Copy Prompt</button>
+                        </div>
+
                         <div class="import-form-group">
                             <label for="import-target-name">Target / Topic Name (e.g. DP, Graph, Arrays)</label>
                             <input type="text" id="import-target-name" class="glass-input" placeholder="e.g. DP" required>
