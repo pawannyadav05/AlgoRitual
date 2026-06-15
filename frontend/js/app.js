@@ -223,12 +223,19 @@ function parseJsonPlan(data, type = 'todo') {
 
 // Smart Copy-Paste plan parser
 function parsePlanText(text, type = 'todo') {
+    let cleanedText = text.trim();
+    // Strip markdown code block wrappers if present (e.g. ```json ... ```)
+    if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText.replace(/^```[a-zA-Z0-9]*\s*/, '');
+        cleanedText = cleanedText.replace(/\s*```$/, '');
+        cleanedText = cleanedText.trim();
+    }
+
     // Check if input is valid JSON
     let parsedJson = null;
     try {
-        const trimmed = text.trim();
-        if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-            parsedJson = JSON.parse(trimmed);
+        if ((cleanedText.startsWith('[') && cleanedText.endsWith(']')) || (cleanedText.startsWith('{') && cleanedText.endsWith('}'))) {
+            parsedJson = JSON.parse(cleanedText);
         }
     } catch (e) {
         // Fallback to text parsing
@@ -238,7 +245,7 @@ function parsePlanText(text, type = 'todo') {
         return parseJsonPlan(parsedJson, type);
     }
 
-    const lines = text.split('\n');
+    const lines = cleanedText.split('\n');
     const questions = [];
     let currentDay = 1;
     let inArchiveSection = false;
