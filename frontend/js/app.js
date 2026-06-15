@@ -148,7 +148,26 @@ function parseJsonPlan(data, type = 'todo') {
     
     for (const dayObj of days) {
         const currentDay = parseInt(dayObj.day || dayObj.dayIndex || 1, 10);
-        const tasks = dayObj.tasks || dayObj.questions || [];
+        
+        let tasks = [];
+        if (type === 'todo') {
+            tasks = dayObj.tasks || dayObj.questions || [];
+        } else if (type === 'completed') {
+            // Check completed/revisions specific fields in the JSON day object
+            const revisionTasks = dayObj.revisions || dayObj.archive_revisions || dayObj.completed || dayObj.archive || [];
+            
+            // Also search in main tasks for any explicitly completed ones
+            const mainTasks = dayObj.tasks || dayObj.questions || [];
+            const completedMainTasks = mainTasks.filter(t => t.status === 'completed' || t.completed === true || !!t.isPQ);
+            
+            tasks = [...revisionTasks, ...completedMainTasks];
+            
+            // Fallback: If both lists are empty, but the user is pasting this JSON in the completed box,
+            // we treat all tasks in the main list as completed questions
+            if (tasks.length === 0 && mainTasks.length > 0) {
+                tasks = mainTasks;
+            }
+        }
         
         if (!Array.isArray(tasks)) continue;
         
