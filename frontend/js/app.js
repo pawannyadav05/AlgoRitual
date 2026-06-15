@@ -142,47 +142,77 @@ function cleanDisplayTitle(title, platform) {
 
 
 // Smart Copy-Paste plan parser
-function parsePlanText(text) {
+function parsePlanText(text, type = 'todo') {
     const lines = text.split('\n');
     const questions = [];
     let currentDay = 1;
+    let inArchiveSection = false;
 
     for (let line of lines) {
         line = line.trim();
         if (!line) continue;
 
-        // Clean checkbox prefixes at the very start of the line (e.g. [ ], [x], [X])
-        let cleanLine = line.replace(/^\[[\sXx\-\checkmark]*\]\s*/, '').trim();
+        const lowerLine = line.toLowerCase();
 
-        // Match Day indicator: e.g. "Day 1:", "Day 2", "## Day 5"
-        const dayMatch = cleanLine.match(/(?:Day|day)\s*(\d+)/i);
-        if (dayMatch) {
-            currentDay = parseInt(dayMatch[1], 10);
-        }
-
-        // Skip lines that are just section dividers or syllabus headers
-        const lowerClean = cleanLine.toLowerCase();
-        if (
-            lowerClean.includes('track a') ||
-            lowerClean.includes('track b') ||
-            lowerClean.includes('track c') ||
-            lowerClean.includes('archive revision') ||
-            lowerClean.includes('do these') ||
-            lowerClean.includes('youtube') ||
-            lowerClean.includes('playlist') ||
-            lowerClean.includes('syllabus') ||
-            lowerClean.includes('curriculum')
-        ) {
+        // Detect Archive Revision section start
+        if (lowerLine.includes('archive revision') || lowerLine.includes('do these') || lowerLine.includes('previous question')) {
+            inArchiveSection = true;
             continue;
         }
 
-        // Skip lines that are just day markers/headers e.g. "Day 1 (June 14)" or "Day 2"
+        // Detect Day indicator to update currentDay
+        const dayMatch = line.match(/(?:Day|day)\s*(\d+)/i);
+        if (dayMatch) {
+            currentDay = parseInt(dayMatch[1], 10);
+            // Reset archive section flag when we hit a new day
+            inArchiveSection = false;
+        }
+
+        // Clean checkbox prefix (e.g. [ ], [x], [X])
+        const hasCheckbox = /^\[[\sXx\-\checkmark]*\]/.test(line);
+        let cleanLine = line.replace(/^\[[\sXx\-\checkmark]*\]\s*/, '').trim();
+
+        // Determine if this line belongs to the requested type (todo or completed)
+        if (type === 'todo') {
+            // In todo mode: skip if it's in the archive section or has a checkbox
+            if (inArchiveSection || hasCheckbox) {
+                continue;
+            }
+            // Skip section dividers or syllabus noise that doesn't contain content
+            if (
+                cleanLine.toLowerCase().startsWith('day') && 
+                cleanLine.split(/\s+/).length < 5 && 
+                !cleanLine.includes('-') && 
+                !cleanLine.includes('#')
+            ) {
+                continue;
+            }
+        } else if (type === 'completed') {
+            // In completed mode: keep only if it has a checkbox OR is in the archive section
+            // and skip Track A/B headers
+            if (!inArchiveSection && !hasCheckbox) {
+                continue;
+            }
+            if (
+                cleanLine.toLowerCase().startsWith('track a') ||
+                cleanLine.toLowerCase().startsWith('track b') ||
+                cleanLine.toLowerCase().startsWith('track c')
+            ) {
+                continue;
+            }
+        }
+
+        // Skip generic header lines or very short lines
+        if (cleanLine.length < 3) continue;
+
+        // Skip lines that are just day headers (double safety check)
+        const lowerClean = cleanLine.toLowerCase();
         if (lowerClean.startsWith('day') && cleanLine.split(/\s+/).length < 5 && !cleanLine.includes('-') && !cleanLine.includes('#')) {
             continue;
         }
 
-        // Exclude headers or very short filler text
-        if (cleanLine.length < 3) continue;
+        // Clean the track prefix from the title (e.g., "Track A (New): " -> "")
+        cleanLine = cleanLine.replace(/^Track\s+[A-Za-z]\s*(?:\([^)]+\))?\s*[:\-]\s*/i, '');
 
         // Extract concept/topic from brackets, parentheses, or trailing dash
         let concept = '';
@@ -194,7 +224,6 @@ function parsePlanText(text) {
             if (parenMatches) {
                 for (const m of parenMatches) {
                     const inner = m.slice(1, -1).trim();
-                    // Skip if inner is just a number (like question ID) or starts with # followed by a number
                     if (inner.match(/^#?\d+$/)) {
                         continue;
                     }
@@ -254,7 +283,6 @@ function parsePlanText(text) {
         if (concept) {
             title = title.replace(new RegExp(`\\[\\s*${concept.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*\\]`), '');
             title = title.replace(new RegExp(`\\(\\s*${concept.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*\\)`), '');
-            // If concept was at the end after a dash, remove it
             title = title.replace(new RegExp(`-\\s*${concept.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*$`), '');
         }
 
@@ -265,7 +293,6 @@ function parsePlanText(text) {
         title = title.replace(/[\[\]\(\)\-\:\*]+$/, ''); // Strip trailing delimiters
         title = title.trim();
 
-        // If title is valid and doesn't look like generic section title
         if (title.length < 3 || title.toLowerCase().startsWith('day') || title.toLowerCase().startsWith('topic')) {
             continue;
         }
@@ -812,7 +839,7 @@ submitImportBtn.addEventListener('click', async () => {
     
     let questions = [];
     if (rawText) {
-        questions = parsePlanText(rawText);
+        questions = parsePlanText(rawText, 'todo');
         if (questions.length === 0) {
             alert('We could not find any questions to parse in the To-Do list. Verify format (e.g. Day 1: Title - Easy).');
             return;
@@ -821,7 +848,7 @@ submitImportBtn.addEventListener('click', async () => {
 
     let completedQuestions = [];
     if (rawCompletedText) {
-        completedQuestions = parsePlanText(rawCompletedText);
+        completedQuestions = parsePlanText(rawCompletedText, 'completed');
         if (completedQuestions.length === 0) {
             alert('We could not find any questions to parse in the Previously Solved list. Verify format (e.g. Title - Easy).');
             return;
