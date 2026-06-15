@@ -40,8 +40,8 @@ router.post('/import-plan', authenticateToken, async (req, res) => {
             // Get all distinct concepts for current pending questions
             const activePlans = await Question.distinct('concept', { userId, status: 'pending' });
             
-            // Get unique concepts from incoming questions
-            const incomingConcepts = new Set(questions.map(q => q.concept || targetName || 'General'));
+            // Get unique concepts from incoming questions (grouping all questions under targetName)
+            const incomingConcepts = new Set([targetName || 'General']);
             
             // Calculate union of active plans and incoming plans
             const unionPlans = new Set([...activePlans, ...incomingConcepts]);
@@ -67,7 +67,7 @@ router.post('/import-plan', authenticateToken, async (req, res) => {
                     userId,
                     title: q.title,
                     difficulty: q.difficulty || 'Easy',
-                    concept: q.concept || targetName || 'General',
+                    concept: targetName || 'General',
                     platform: q.platform || 'LeetCode',
                     link: q.link || '',
                     status: 'pending',
