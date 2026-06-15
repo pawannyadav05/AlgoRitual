@@ -45,6 +45,10 @@ const QuestionSchema = new mongoose.Schema({
     isPQ: {
         type: Boolean,
         default: false
+    },
+    track: {
+        type: String,
+        default: ""
     }
 }, {
     timestamps: true

@@ -220,13 +220,18 @@ function parseJsonPlan(data, type = 'todo') {
                 }
             }
             
+            let track = task.track || '';
+            if (track === 'track_a') track = 'Track A';
+            if (track === 'track_b') track = 'Track B';
+            
             questions.push({
                 title,
                 difficulty,
                 platform,
                 link,
                 concept: concept.trim(),
-                dayIndex: currentDay
+                dayIndex: currentDay,
+                track: track
             });
         }
     }
@@ -329,6 +334,13 @@ function parsePlanText(text, type = 'todo') {
         const lowerClean = cleanLine.toLowerCase();
         if (lowerClean.startsWith('day') && cleanLine.split(/\s+/).length < 5 && !cleanLine.includes('-') && !cleanLine.includes('—') && !cleanLine.includes('#')) {
             continue;
+        }
+
+        // Extract track prefix if present
+        let track = '';
+        const trackMatch = cleanLine.match(/^Track\s+([A-Za-z])/i);
+        if (trackMatch) {
+            track = `Track ${trackMatch[1].toUpperCase()}`;
         }
 
         // Clean the track prefix from the title (e.g., "Track A (DP): " or "Track B (Recursion): ")
@@ -440,7 +452,8 @@ function parsePlanText(text, type = 'todo') {
             platform,
             link,
             concept,
-            dayIndex: currentDay
+            dayIndex: currentDay,
+            track
         });
     }
     return questions;
@@ -572,9 +585,23 @@ function createQuestionCard(q, isRevision = false, revisionId = null) {
         ? `<span class="pq-badge" style="background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.25); font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle;">PQ</span>` 
         : '';
     
+    let trackBadge = '';
+    if (q.track) {
+        const isTrackA = q.track.toLowerCase().includes('track a') || q.track.toLowerCase().includes('track_a');
+        const isTrackB = q.track.toLowerCase().includes('track b') || q.track.toLowerCase().includes('track_b');
+        
+        if (isTrackA) {
+            trackBadge = `<span class="track-badge track-a-badge" style="background: rgba(74, 120, 156, 0.12); color: #6a9cc2; border: 1px solid rgba(74, 120, 156, 0.25); font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle;">Track A</span>`;
+        } else if (isTrackB) {
+            trackBadge = `<span class="track-badge track-b-badge" style="background: rgba(203, 122, 88, 0.12); color: #cb7a58; border: 1px solid rgba(203, 122, 88, 0.25); font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle;">Track B</span>`;
+        } else {
+            trackBadge = `<span class="track-badge track-other-badge" style="background: rgba(255, 255, 255, 0.08); color: #dcdcdc; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle;">${q.track}</span>`;
+        }
+    }
+    
     card.innerHTML = `
         <div class="card-top">
-            <h4 class="card-title">${pqBadge}${displayTitle} - ${q.platform}</h4>
+            <h4 class="card-title">${pqBadge}${trackBadge}${displayTitle} - ${q.platform}</h4>
             <span class="card-difficulty-tag ${diffTagClass}">${q.difficulty.toUpperCase()}</span>
         </div>
         <div class="card-bottom">

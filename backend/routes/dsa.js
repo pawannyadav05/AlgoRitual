@@ -70,6 +70,7 @@ router.post('/import-plan', authenticateToken, async (req, res) => {
                     concept: targetName || 'General',
                     platform: q.platform || 'LeetCode',
                     link: q.link || '',
+                    track: q.track || '',
                     status: 'pending',
                     scheduledDate
                 };
@@ -91,7 +92,8 @@ router.post('/import-plan', authenticateToken, async (req, res) => {
                     status: 'completed',
                     scheduledDate: dateToStart,
                     completedDate: dateToStart,
-                    isPQ: true
+                    isPQ: true,
+                    track: q.track || ''
                 };
             });
             const savedCompleted = await Question.insertMany(completedDocs);
