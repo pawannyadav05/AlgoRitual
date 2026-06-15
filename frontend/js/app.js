@@ -454,10 +454,13 @@ function createQuestionCard(q, isRevision = false, revisionId = null) {
         : `<span></span>`;
     
     const displayTitle = cleanDisplayTitle(q.title, q.platform);
+    const pqBadge = q.isPQ 
+        ? `<span class="pq-badge" style="background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.25); font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle;">PQ</span>` 
+        : '';
     
     card.innerHTML = `
         <div class="card-top">
-            <h4 class="card-title">${displayTitle} - ${q.platform}</h4>
+            <h4 class="card-title">${pqBadge}${displayTitle} - ${q.platform}</h4>
             <span class="card-difficulty-tag ${diffTagClass}">${q.difficulty.toUpperCase()}</span>
         </div>
         <div class="card-bottom">
@@ -702,9 +705,12 @@ async function populateRevisionVault() {
             }
 
             const displayTitle = cleanDisplayTitle(q.title, q.platform);
+            const pqBadge = q.isPQ 
+                ? `<span class="pq-badge" style="background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.25); font-size: 8px; padding: 1px 3px; border-radius: 3px; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle;">PQ</span>` 
+                : '';
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${displayTitle}</strong><br><small class="text-muted">${q.platform}</small></td>
+                <td><strong>${pqBadge}${displayTitle}</strong><br><small class="text-muted">${q.platform}</small></td>
                 <td><span class="card-difficulty-tag tag-${q.difficulty.toLowerCase()}">${q.difficulty}</span></td>
                 <td>${intervalText}</td>
                 <td>${nextDueText}</td>

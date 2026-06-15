@@ -90,7 +90,8 @@ router.post('/import-plan', authenticateToken, async (req, res) => {
                     link: q.link || '',
                     status: 'completed',
                     scheduledDate: dateToStart,
-                    completedDate: dateToStart
+                    completedDate: dateToStart,
+                    isPQ: true
                 };
             });
             const savedCompleted = await Question.insertMany(completedDocs);

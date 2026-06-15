@@ -41,6 +41,10 @@ const QuestionSchema = new mongoose.Schema({
     completedDate: {
         type: String, // Format: YYYY-MM-DD
         default: null
+    },
+    isPQ: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
