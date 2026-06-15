@@ -144,7 +144,19 @@ function cleanDisplayTitle(title, platform) {
 // JSON study plan parser helper
 function parseJsonPlan(data, type = 'todo') {
     const questions = [];
-    const days = Array.isArray(data) ? data : [data];
+    let days = Array.isArray(data) ? data : [data];
+    
+    // Check if the parsed JSON represents task objects directly instead of day objects
+    const isFlatTasks = Array.isArray(data)
+        ? (data.length > 0 && (data[0].title || data[0].name) && !data[0].tasks && !data[0].questions)
+        : (data && (data.title || data.name) && !data.tasks && !data.questions);
+
+    if (isFlatTasks) {
+        days = [{
+            day: 1,
+            tasks: Array.isArray(data) ? data : [data]
+        }];
+    }
     
     for (const dayObj of days) {
         const currentDay = parseInt(dayObj.day || dayObj.dayIndex || 1, 10);
