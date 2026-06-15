@@ -141,8 +141,84 @@ function cleanDisplayTitle(title, platform) {
 }
 
 
+// JSON study plan parser helper
+function parseJsonPlan(data, type = 'todo') {
+    const questions = [];
+    const days = Array.isArray(data) ? data : [data];
+    
+    for (const dayObj of days) {
+        const currentDay = parseInt(dayObj.day || dayObj.dayIndex || 1, 10);
+        const tasks = dayObj.tasks || dayObj.questions || [];
+        
+        if (!Array.isArray(tasks)) continue;
+        
+        for (const task of tasks) {
+            const isCompletedTask = task.status === 'completed' || task.completed === true || !!task.isPQ;
+            
+            if (type === 'todo' && isCompletedTask) {
+                continue;
+            }
+            
+            const title = task.title || task.name || '';
+            if (!title || title.length < 3) continue;
+            
+            const difficulty = task.difficulty || 'Easy';
+            const platform = task.platform || 'LeetCode';
+            
+            let link = task.link || '';
+            if (!link && task.leetcodeId && platform.toLowerCase() === 'leetcode') {
+                const slug = title.toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .trim()
+                    .replace(/\s+/g, '-');
+                link = `https://leetcode.com/problems/${slug}/`;
+            } else if (!link && (platform.toLowerCase() === 'geeksforgeeks' || platform.toLowerCase() === 'gfg')) {
+                const slug = title.toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .trim()
+                    .replace(/\s+/g, '-');
+                link = `https://www.geeksforgeeks.org/problems/${slug}/`;
+            }
+            
+            let concept = task.concept || task.category || '';
+            if (!concept) {
+                if (task.track === 'Track A' || task.track === 'track_a') {
+                    concept = dayObj.track_a_topic || '';
+                } else if (task.track === 'Track B' || task.track === 'track_b') {
+                    concept = dayObj.track_b_topic || '';
+                }
+            }
+            
+            questions.push({
+                title,
+                difficulty,
+                platform,
+                link,
+                concept: concept.trim(),
+                dayIndex: currentDay
+            });
+        }
+    }
+    return questions;
+}
+
 // Smart Copy-Paste plan parser
 function parsePlanText(text, type = 'todo') {
+    // Check if input is valid JSON
+    let parsedJson = null;
+    try {
+        const trimmed = text.trim();
+        if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+            parsedJson = JSON.parse(trimmed);
+        }
+    } catch (e) {
+        // Fallback to text parsing
+    }
+
+    if (parsedJson) {
+        return parseJsonPlan(parsedJson, type);
+    }
+
     const lines = text.split('\n');
     const questions = [];
     let currentDay = 1;
