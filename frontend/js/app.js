@@ -154,6 +154,11 @@ function parsePlanText(text, type = 'todo') {
 
         const lowerLine = line.toLowerCase();
 
+        // Skip Phase header lines (e.g. Phase 2: Hierarchical Structures)
+        if (lowerLine.includes('phase')) {
+            continue;
+        }
+
         // Detect Archive Revision section start
         if (lowerLine.includes('archive revision') || lowerLine.includes('do these') || lowerLine.includes('previous question')) {
             inArchiveSection = true;
@@ -183,6 +188,7 @@ function parsePlanText(text, type = 'todo') {
                 cleanLine.toLowerCase().startsWith('day') && 
                 cleanLine.split(/\s+/).length < 5 && 
                 !cleanLine.includes('-') && 
+                !cleanLine.includes('—') && 
                 !cleanLine.includes('#')
             ) {
                 continue;
@@ -207,12 +213,12 @@ function parsePlanText(text, type = 'todo') {
 
         // Skip lines that are just day headers (double safety check)
         const lowerClean = cleanLine.toLowerCase();
-        if (lowerClean.startsWith('day') && cleanLine.split(/\s+/).length < 5 && !cleanLine.includes('-') && !cleanLine.includes('#')) {
+        if (lowerClean.startsWith('day') && cleanLine.split(/\s+/).length < 5 && !cleanLine.includes('-') && !cleanLine.includes('—') && !cleanLine.includes('#')) {
             continue;
         }
 
-        // Clean the track prefix from the title (e.g., "Track A (New): " -> "")
-        cleanLine = cleanLine.replace(/^Track\s+[A-Za-z]\s*(?:\([^)]+\))?\s*[:\-]\s*/i, '');
+        // Clean the track prefix from the title (e.g., "Track A (DP): " or "Track B (Recursion): ")
+        cleanLine = cleanLine.replace(/^Track\s+[A-Za-z]\s*(?:\([^)]+\))?\s*[:\-–—]\s*/i, '');
 
         // Extract concept/topic from brackets, parentheses, or trailing dash
         let concept = '';
@@ -224,7 +230,19 @@ function parsePlanText(text, type = 'todo') {
             if (parenMatches) {
                 for (const m of parenMatches) {
                     const inner = m.slice(1, -1).trim();
+                    const lowerInner = inner.toLowerCase();
                     if (inner.match(/^#?\d+$/)) {
+                        continue;
+                    }
+                    // Skip platform names as concepts
+                    if (
+                        lowerInner === 'leetcode' ||
+                        lowerInner === 'gfg' ||
+                        lowerInner === 'geeksforgeeks' ||
+                        lowerInner === 'codeforces' ||
+                        lowerInner === 'cf' ||
+                        lowerInner === 'codechef'
+                    ) {
                         continue;
                     }
                     if (!inner.startsWith('http') && !inner.includes('.') && !inner.includes('/')) {
@@ -235,7 +253,7 @@ function parsePlanText(text, type = 'todo') {
             }
         }
         if (!concept) {
-            const parts = cleanLine.split('-');
+            const parts = cleanLine.split(/[\-–—]/);
             if (parts.length >= 3) {
                 const lastPart = parts[parts.length - 1].trim();
                 if (lastPart.length < 20 && !lastPart.startsWith('http') && !lastPart.includes('/')) {
@@ -271,7 +289,7 @@ function parsePlanText(text, type = 'todo') {
 
         // Extract clean title
         let title = cleanLine;
-        title = title.replace(/^(?:day|Day)\s*\d+[:\-\s]*/, ''); // Remove Day label
+        title = title.replace(/^(?:day|Day)\s*\d+[:\-–—\s]*/, ''); // Remove Day label
         title = title.replace(/\(https?:\/\/[^\s\)]+\)/, ''); // Remove parenthesis link
         title = title.replace(/https?:\/\/[^\s]+/, ''); // Remove normal link
         title = title.replace(/\b(easy|medium|hard|med|intermediate|advanced|hrd|Easy|Medium|Hard)\b/i, ''); // Remove difficulty
@@ -290,7 +308,12 @@ function parsePlanText(text, type = 'todo') {
         title = title.replace(/\s+/g, ' '); // Normalize spaces
         title = title.replace(/^[\s\-\*\#\d\.\:\(\)]+/, ''); // Strip leading bullet markers
         title = title.trim();
-        title = title.replace(/[\[\]\(\)\-\:\*]+$/, ''); // Strip trailing delimiters
+        
+        // Clean trailing spaces, hyphens, colons, stars, en-dashes, and em-dashes
+        title = title.replace(/[\s\-–—\:\*]+$/, '');
+        // Clean empty trailing parentheses/brackets only (to protect signatures like atoi() or Pow(x,n))
+        title = title.replace(/\(\s*\)$/, '');
+        title = title.replace(/\[\s*\]$/, '');
         title = title.trim();
 
         if (title.length < 3 || title.toLowerCase().startsWith('day') || title.toLowerCase().startsWith('topic')) {
