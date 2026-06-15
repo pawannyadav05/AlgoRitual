@@ -151,30 +151,53 @@ function parsePlanText(text) {
         line = line.trim();
         if (!line) continue;
 
+        // Clean checkbox prefixes at the very start of the line (e.g. [ ], [x], [X])
+        let cleanLine = line.replace(/^\[[\sXx\-\checkmark]*\]\s*/, '').trim();
+
         // Match Day indicator: e.g. "Day 1:", "Day 2", "## Day 5"
-        const dayMatch = line.match(/(?:Day|day)\s*(\d+)/i);
+        const dayMatch = cleanLine.match(/(?:Day|day)\s*(\d+)/i);
         if (dayMatch) {
             currentDay = parseInt(dayMatch[1], 10);
         }
 
-        // Skip if line is just a section divider like "Day 1" or "Topic: Arrays"
-        if (line.match(/(?:day|topic|playlist|syllabus)/i) && line.split(/\s+/).length < 4 && !line.includes('-') && !line.includes('(')) {
+        // Skip lines that are just section dividers or syllabus headers
+        const lowerClean = cleanLine.toLowerCase();
+        if (
+            lowerClean.includes('track a') ||
+            lowerClean.includes('track b') ||
+            lowerClean.includes('track c') ||
+            lowerClean.includes('archive revision') ||
+            lowerClean.includes('do these') ||
+            lowerClean.includes('youtube') ||
+            lowerClean.includes('playlist') ||
+            lowerClean.includes('syllabus') ||
+            lowerClean.includes('curriculum')
+        ) {
+            continue;
+        }
+
+        // Skip lines that are just day markers/headers e.g. "Day 1 (June 14)" or "Day 2"
+        if (lowerClean.startsWith('day') && cleanLine.split(/\s+/).length < 5 && !cleanLine.includes('-') && !cleanLine.includes('#')) {
             continue;
         }
 
         // Exclude headers or very short filler text
-        if (line.length < 5) continue;
+        if (cleanLine.length < 3) continue;
 
         // Extract concept/topic from brackets, parentheses, or trailing dash
         let concept = '';
-        const bracketMatch = line.match(/\[([^\]]+)\]/);
+        const bracketMatch = cleanLine.match(/\[([^\]]+)\]/);
         if (bracketMatch) {
             concept = bracketMatch[1].trim();
         } else {
-            const parenMatches = line.match(/\(([^)]+)\)/g);
+            const parenMatches = cleanLine.match(/\(([^)]+)\)/g);
             if (parenMatches) {
                 for (const m of parenMatches) {
                     const inner = m.slice(1, -1).trim();
+                    // Skip if inner is just a number (like question ID) or starts with # followed by a number
+                    if (inner.match(/^#?\d+$/)) {
+                        continue;
+                    }
                     if (!inner.startsWith('http') && !inner.includes('.') && !inner.includes('/')) {
                         concept = inner;
                         break;
@@ -183,7 +206,7 @@ function parsePlanText(text) {
             }
         }
         if (!concept) {
-            const parts = line.split('-');
+            const parts = cleanLine.split('-');
             if (parts.length >= 3) {
                 const lastPart = parts[parts.length - 1].trim();
                 if (lastPart.length < 20 && !lastPart.startsWith('http') && !lastPart.includes('/')) {
@@ -194,36 +217,38 @@ function parsePlanText(text) {
 
         // Extract difficulty
         let difficulty = 'Easy';
-        if (line.match(/\b(medium|med|intermediate)\b/i)) {
+        if (cleanLine.match(/\b(medium|med|intermediate)\b/i)) {
             difficulty = 'Medium';
-        } else if (line.match(/\b(hard|advanced|hrd)\b/i)) {
+        } else if (cleanLine.match(/\b(hard|advanced|hrd)\b/i)) {
             difficulty = 'Hard';
         }
 
         // Extract link
         let link = '';
-        const linkMatch = line.match(/(https?:\/\/[^\s\)]+)/i);
+        const linkMatch = cleanLine.match(/(https?:\/\/[^\s\)]+)/i);
         if (linkMatch) {
             link = linkMatch[1];
         }
 
         // Extract platform
         let platform = 'LeetCode';
-        if (line.match(/\b(geeksforgeeks|gfg)\b/i)) {
+        if (cleanLine.match(/\b(geeksforgeeks|gfg)\b/i)) {
             platform = 'GeeksforGeeks';
-        } else if (line.match(/\b(codeforces|cf)\b/i)) {
+        } else if (cleanLine.match(/\b(codeforces|cf)\b/i)) {
             platform = 'Codeforces';
-        } else if (line.match(/\b(codechef)\b/i)) {
+        } else if (cleanLine.match(/\b(codechef)\b/i)) {
             platform = 'CodeChef';
         }
 
         // Extract clean title
-        let title = line;
+        let title = cleanLine;
         title = title.replace(/^(?:day|Day)\s*\d+[:\-\s]*/, ''); // Remove Day label
         title = title.replace(/\(https?:\/\/[^\s\)]+\)/, ''); // Remove parenthesis link
         title = title.replace(/https?:\/\/[^\s]+/, ''); // Remove normal link
         title = title.replace(/\b(easy|medium|hard|med|intermediate|advanced|hrd|Easy|Medium|Hard)\b/i, ''); // Remove difficulty
         title = title.replace(/\b(leetcode|geeksforgeeks|gfg|codeforces|cf|codechef)\b/i, ''); // Remove platform name
+        title = title.replace(/\(#?\d+\)/g, ''); // Remove LeetCode number tags (e.g. (#1))
+        title = title.replace(/\[#?\d+\]/g, ''); // Remove LeetCode number tags in brackets (e.g. [#1])
         
         // Remove concept block if it was in brackets or parentheses
         if (concept) {
